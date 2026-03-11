@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IAGestioneArte — Assistente RAG per la gestione dei Beni Culturali">
+    <title>IAGestioneArte — Assistente Beni Culturali</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Skip navigation per accessibilità -->
+    <a href="#main-content" class="skip-link">Salta al contenuto principale</a>
+
+    <!-- ── Header ──────────────────────────────────────── -->
+    <header class="app-header" role="banner">
+        <div class="header-content">
+            <h1 class="app-title">
+                <span class="logo" aria-hidden="true">🏛️</span>
+                IAGestioneArte
+            </h1>
+            <p class="app-subtitle">Assistente AI per i Beni Culturali — ABA Bari</p>
+        </div>
+        <div class="header-actions">
+            <button id="btn-sessions" class="btn btn-outline" aria-label="Cronologia chat" title="Cronologia">
+                💬 Chat
+            </button>
+            <button id="btn-docs" class="btn btn-outline" aria-label="Gestisci documenti" title="Documenti">
+                📄 Documenti
+            </button>
+            <button id="btn-settings" class="btn btn-outline" aria-label="Impostazioni" title="Impostazioni">
+                ⚙️
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main content ────────────────────────────────── -->
+    <main id="main-content" class="app-main" role="main">
+
+        <!-- Onboarding (primo accesso) -->
+        <section id="onboarding" class="onboarding" aria-label="Guida introduttiva">
+            <div class="onboarding-card">
+                <h2>Benvenuto in IAGestioneArte</h2>
+                <p>Assistente AI specializzato nella gestione dei Beni Culturali.</p>
+
+                <div class="onboarding-steps">
+                    <div class="step" data-step="1">
+                        <span class="step-icon" aria-hidden="true">📄</span>
+                        <h3>1. Carica documenti</h3>
+                        <p>PDF, DOCX, PPTX, XLSX o immagini. Trascina qui o usa il pulsante.</p>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span class="step-icon" aria-hidden="true">💬</span>
+                        <h3>2. Fai domande</h3>
+                        <p>Chiedi informazioni sui tuoi documenti in linguaggio naturale.</p>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span class="step-icon" aria-hidden="true">📚</span>
+                        <h3>3. Risposte con fonti</h3>
+                        <p>Ogni risposta include citazioni precise ai documenti originali.</p>
+                    </div>
+                </div>
+
+                <button id="btn-start" class="btn btn-primary btn-lg">Inizia</button>
+            </div>
+        </section>
+
+        <!-- Chat area -->
+        <section id="chat-section" class="chat-section hidden" aria-label="Area conversazione">
+
+            <!-- Modalità selector -->
+            <div class="modalita-bar" role="toolbar" aria-label="Modalità operativa">
+                <label for="modalita-select" class="sr-only">Modalità</label>
+                <select id="modalita-select" class="modalita-select" aria-label="Seleziona modalità operativa">
+                    <option value="generale">🎯 Generale</option>
+                    <option value="ragionamento">🧠 Ragionamento</option>
+                    <option value="analisi">🔬 Analisi Critica</option>
+                    <option value="fashion_design">👗 Fashion Design</option>
+                    <option value="esami">📝 Preparazione Esami</option>
+                    <option value="presentazioni">🎤 Presentazioni</option>
+                    <option value="documenti">📑 Analisi Documenti</option>
+                    <option value="storico_artistico">🎨 Storico-Artistico</option>
+                </select>
+            </div>
+
+            <!-- Messages container -->
+            <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Messaggi conversazione">
+                <div class="welcome-message">
+                    <p>👋 Ciao! Sono il tuo assistente per i Beni Culturali.</p>
+                    <p>Carica dei documenti e fammi delle domande, oppure chiedimi direttamente.</p>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="input-area" role="form" aria-label="Invio messaggio">
+                <div class="input-row">
+                    <label for="chat-input" class="sr-only">Scrivi la tua domanda</label>
+                    <textarea
+                        id="chat-input"
+                        class="chat-input"
+                        placeholder="Scrivi la tua domanda..."
+                        rows="1"
+                        aria-label="Domanda"
+                        maxlength="5000"
+                    ></textarea>
+                    <button id="btn-send" class="btn btn-primary btn-send" aria-label="Invia messaggio" disabled>
+                        <span class="send-icon" aria-hidden="true">➤</span>
+                    </button>
+                </div>
+                <div class="input-actions">
+                    <button id="btn-upload" class="btn btn-sm btn-outline" aria-label="Carica documento">
+                        📎 Carica file
+                    </button>
+                    <span id="char-count" class="char-count" aria-live="polite">0/5000</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ── Pannello sessioni chat (sidebar sinistra) ────── -->
+    <aside id="sessions-panel" class="sessions-panel hidden" role="complementary" aria-label="Cronologia conversazioni">
+        <div class="panel-header">
+            <h2>Conversazioni</h2>
+            <button id="btn-close-sessions" class="btn btn-icon" aria-label="Chiudi pannello">✕</button>
+        </div>
+        <button id="btn-new-chat" class="btn btn-primary" style="width:100%;margin-bottom:12px;">
+            ➕ Nuova conversazione
+        </button>
+        <div id="session-list" class="session-list" role="list" aria-label="Lista conversazioni">
+            <p class="empty-state">Nessuna conversazione salvata.</p>
+        </div>
+    </aside>
+
+    <!-- ── Pannello documenti (sidebar) ────────────────── -->
+    <aside id="docs-panel" class="docs-panel hidden" role="complementary" aria-label="Pannello documenti">
+        <div class="panel-header">
+            <h2>Documenti caricati</h2>
+            <button id="btn-close-docs" class="btn btn-icon" aria-label="Chiudi pannello">✕</button>
+        </div>
+
+        <!-- Drop zone -->
+        <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Trascina qui i file o clicca per caricare">
+            <div class="drop-zone-content">
+                <span class="drop-icon" aria-hidden="true">📁</span>
+                <p>Trascina qui i file</p>
+                <p class="drop-hint">PDF, DOCX, PPTX, XLSX, immagini</p>
+            </div>
+            <input
+                type="file"
+                id="file-input"
+                class="sr-only"
+                accept=".pdf,.docx,.pptx,.xlsx,.png,.jpg,.jpeg,.webp"
+                multiple
+                aria-label="Seleziona file da caricare"
+            >
+        </div>
+
+        <!-- Upload progress -->
+        <div id="upload-progress" class="upload-progress hidden" aria-live="polite">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <p id="upload-status" class="upload-status">Caricamento...</p>
+        </div>
+
+        <!-- Document list -->
+        <div id="doc-list" class="doc-list" role="list" aria-label="Lista documenti">
+            <p class="empty-state">Nessun documento caricato.</p>
+        </div>
+    </aside>
+
+    <!-- ── Toast notifications ─────────────────────────── -->
+    <div id="toast-container" class="toast-container" role="alert" aria-live="assertive"></div>
+
+    <!-- ── Hidden file input for chat upload ──────────── -->
+    <input type="file" id="chat-file-input" class="sr-only" accept=".pdf,.docx,.pptx,.xlsx,.png,.jpg,.jpeg,.webp" multiple>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# IAGestioneArte — Dipendenze
+# Installazione: pip install -r requirements.txt
+
+# ── Core framework ───────────────────────────────────
+fastapi==0.115.9
+uvicorn[standard]==0.34.2
+pydantic>=2.0,<3.0
+python-multipart==0.0.20
+python-dotenv==1.1.0
+pyyaml==6.0.2
+
+# ── RAG: Embedding & Vector Store ────────────────────
+sentence-transformers>=3.0,<5.0
+chromadb==1.5.1
+rank-bm25==0.2.2
+
+# ── RAG: Reranker ────────────────────────────────────
+# Cross-encoder incluso in sentence-transformers
+
+# ── Document processing ──────────────────────────────
+PyMuPDF==1.25.5
+python-docx==1.1.2
+python-pptx==1.0.2
+openpyxl==3.1.5
+Pillow==11.2.1
+pytesseract==0.3.13
+
+# ── NLP ──────────────────────────────────────────────
+nltk==3.9.1
+
+# ── LLM providers ───────────────────────────────────
+openai==1.82.0
+groq==0.25.0
+mistralai==1.7.1
+google-generativeai==0.8.5
+huggingface-hub==0.33.0
+
+# ── HTTP ─────────────────────────────────────────────
+requests==2.32.3
+httpx==0.28.1
+
+# ── Utilities ────────────────────────────────────────
+numpy>=1.26.0,<3.0.0

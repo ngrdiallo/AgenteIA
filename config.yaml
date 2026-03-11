@@ -1,0 +1,51 @@
+# ============================================================
+# IAGestioneArte — Configurazione Centralizzata
+# ============================================================
+# Modifica questi parametri per personalizzare il sistema.
+# Le API keys vanno nel file .env (non qui).
+# ============================================================
+
+app:
+  name: "IAGestioneArte"
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 8001
+  debug: false
+
+paths:
+  data_dir: "data"
+  storage_dir: "storage"
+  logs_dir: "logs"
+  temp_dir: "temp_uploads"
+
+rag:
+  # Chunking
+  chunk_size: 512          # Token target per chunk
+  chunk_overlap: 50        # Frasi di overlap tra chunk
+  
+  # Retrieval
+  top_k: 10                # Candidati dal hybrid search
+  rerank_top_k: 5          # Risultati finali dopo re-ranking
+  score_threshold: 0.15    # Soglia minima di rilevanza
+  
+  # Modelli
+  # Per italiano: multilingual-e5-large (1024d, migliore) o multilingual-e5-base (768d, più leggero)
+  embedding_model: "intfloat/multilingual-e5-base"
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  reranker_provider: "local"   # "local" (cross-encoder) o "cohere" (API cloud)
+
+llm:
+  temperature: 0.3
+  max_tokens: 2048
+  default_backend: "auto"  # "auto" = fallback chain, oppure nome specifico
+  italian_only: true
+
+vision:
+  enabled: true
+  ocr_enabled: true        # richiede Tesseract installato
+
+cleanup:
+  auto_cleanup: true
+  interval_seconds: 3600
+  temp_max_age_hours: 24
+  log_max_age_days: 7
