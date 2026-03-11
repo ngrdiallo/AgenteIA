@@ -1,0 +1,47 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ChromaDB
+chroma/
+chroma_db/
+
+# Storage (chat sessions)
+storage/chats/
+
+# Test results
+*_results.json
+provider_status.json
+test_ground_truth.json
+
+# Backups
+*_BACKUP.py
+*_backup.py
