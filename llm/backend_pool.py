@@ -324,7 +324,6 @@ class BackendPool:
             ],
             # Reasoning: modelli qualitativi
             "reasoning": [
-                "cerebras_qwen235",    # Qwen3-235B 1400 tok/s reasoning
                 "openrouter_r1",       # DeepSeek R1 SOTA
                 "chutes",              # DeepSeek-R1 decentralized
                 "groq_qwen3",         # Qwen3-32B /think LPU
@@ -345,7 +344,6 @@ class BackendPool:
             "large_context": [
                 # TIER 1: backbone alto volume (gemini_lite PRIMA di gemini!)
                 "mistral",             # 33M token/mese BACKBONE
-                "cerebras_qwen235",    # 1M/day 1400 tok/s, Qwen3-235B
                 "gemini_lite",         # 1000 RPD (PRIMA!)
                 "gemini",              # 20 RPD (DOPO lite!)
                 "gemini_pro",          # 100 RPD, reasoning premium

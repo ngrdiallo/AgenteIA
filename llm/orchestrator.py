@@ -25,6 +25,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
+import re
 
 from config import settings
 from llm.backend_pool import BackendPool
@@ -40,6 +41,17 @@ class LLMResponse:
     model: str = ""
     latency: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+
+def _strip_think(text: str) -> str:
+    """Remove <think> blocks from model outputs."""
+    if not text:
+        return text
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+    text = re.sub(r'<think>.*$', '', text, flags=re.DOTALL)
+    text = text.replace('</think>', '')
+    return text.strip()
 
 
 class LLMOrchestrator:
@@ -137,7 +149,8 @@ class LLMOrchestrator:
 
     # Provider permanentemente disabilitati (non verranno usati nelle chain)
     _DISABLED_PROVIDERS: set = {
-        "deepseek",       # 402 Insufficient Balance (permanente fino a ricarica manuale)
+        "deepseek",
+        "cerebras_qwen235",       # 402 Insufficient Balance (permanente fino a ricarica manuale)
         "scaleway",       # API key non configurata
         "ovh",            # API key non configurata
         "aimlapi",        # API key non configurata
@@ -616,7 +629,7 @@ class LLMOrchestrator:
             )
             latency = time.time() - start
             text = response.choices[0].message.content or ""
-            return text, bool(text.strip()), {
+            return _strip_think(text), bool(text.strip()), {
                 "model": model,
                 "provider": "Cerebras-WSE",
                 "latency_s": round(latency, 2),
@@ -650,7 +663,7 @@ class LLMOrchestrator:
         "google/gemma-3n-e4b-it:free",
         "nousresearch/deephermes-3-llama-3-8b:free",
     ]
-    def _query_openrouter(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
+    def _query_openrouter(self, prompt: str, system_prompt: str, model: str = None) -> Tuple[str, bool, Dict]:
         api_key = settings.OPENROUTER_API_KEY
         if not api_key:
             return "", False, {}
@@ -667,7 +680,27 @@ class LLMOrchestrator:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Prova modelli :free in rotazione
+        # Se model è passato esplicitamente, usalo; altrimenti prova i modelli :free
+        if model:
+            try:
+                start = time.time()
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                )
+                latency = time.time() - start
+                text = response.choices[0].message.content or ""
+                return _strip_think(text), bool(text.strip()), {
+                    "model": model,
+                    "provider": "OpenRouter",
+                    "latency_s": round(latency, 2),
+                }
+            except Exception as e:
+                return "", False, {"error": str(e), "model": model}
+
+        # Altrimenti prova modelli :free in rotazione
         last_err = ""
         for model_name in self._OPENROUTER_FREE_MODELS:
             try:
@@ -747,7 +780,7 @@ class LLMOrchestrator:
             raise last_error
         return "", False, {}
 
-    def _query_groq_model(self, prompt: str, system_prompt: str, model: str) -> Tuple[str, bool, Dict]:
+    def _query_groq_model(self, prompt: str, system_prompt: str, model: str, reasoning_format: str = None) -> Tuple[str, bool, Dict]:
         """Groq helper method for models with separate quota."""
         api_key = settings.GROQ_API_KEY
         if not api_key:
@@ -764,12 +797,17 @@ class LLMOrchestrator:
 
         try:
             start = time.time()
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-            )
+            # Only pass reasoning_format for reasoning models
+            create_kwargs = {
+                "model": model,
+                "messages": messages,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            }
+            if reasoning_format:
+                create_kwargs["reasoning_format"] = reasoning_format
+            
+            response = client.chat.completions.create(**create_kwargs)
             latency = time.time() - start
             text = response.choices[0].message.content or ""
             return text, bool(text.strip()), {
@@ -1302,11 +1340,19 @@ class LLMOrchestrator:
     # Backend: Gemini Flash-Lite (gemini-2.0-flash-lite — 1000 RPD, ultra-fast)
     # ------------------------------------------------------------------
     def _query_gemini_lite(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
-        import google.genai as genai
-
-        api_key = settings.GEMINI_API_KEY
+        """Gemini 2.0 Flash via OpenAI-compatible endpoint."""
+        import os
+        api_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
-            return "", False, {}
+            return "", False, {"error": "GOOGLE_API_KEY non configurata"}
+        return self._query_openai_compatible(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            api_key=api_key,
+            model="gemini-2.0-flash",
+            timeout=60,
+        )
 
         genai.configure(api_key=api_key)
 
@@ -1511,11 +1557,11 @@ class LLMOrchestrator:
     # ------------------------------------------------------------------
     def _query_groq_qwen3(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
         """Groq Qwen3-32B — reasoning with /think mode, 1K req/day separate quota."""
-        return self._query_groq_model(prompt, system_prompt, "qwen/qwen3-32b")
+        return self._query_groq_model(prompt, system_prompt, "qwen/qwen3-32b", reasoning_format="hidden")
 
     def _query_groq_kimi(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
         """Groq Kimi-K2 — multimodal reasoning, 1K req/day separate quota."""
-        return self._query_groq_model(prompt, system_prompt, "moonshotai/kimi-k2-instruct")
+        return self._query_groq_model(prompt, system_prompt, "moonshotai/kimi-k2-instruct-0905", reasoning_format="hidden")
 
     def _query_groq_gptoss(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
         """Groq GPT-OSS-120B — OpenAI open source, 1K req/day separate quota."""
@@ -1606,10 +1652,19 @@ class LLMOrchestrator:
     # Gemini Pro — gemini-2.5-pro for reasoning premium
     # ------------------------------------------------------------------
     def _query_gemini_pro(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
-        """Gemini 2.5 Pro — 100 RPD, reasoning premium."""
-        import google.genai as genai
-
-        api_key = settings.GEMINI_API_KEY
+        """Gemini 2.5 Pro via OpenAI-compatible endpoint."""
+        import os
+        api_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            return "", False, {"error": "GOOGLE_API_KEY non configurata"}
+        return self._query_openai_compatible(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            api_key=api_key,
+            model="gemini-2.5-pro-preview-06-05",
+            timeout=120,
+        )
         if not api_key:
             return "", False, {}
 
