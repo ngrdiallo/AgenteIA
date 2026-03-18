@@ -141,6 +141,7 @@ class BackendState:
         """
         import time
         self.state = CircuitState.RATE_LIMITED
+        self.consecutive_failures = 0
         self.rate_limited_until = time.time() + cooldown_seconds
         self.total_calls += 1
         self.last_failure_time = time.time()

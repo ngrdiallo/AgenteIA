@@ -411,6 +411,7 @@ class LLMOrchestrator:
                     "429", "rate limit", "rate_limit", "too many requests",
                     "quota exceeded", "resource_exhausted", "queue_exceeded",
                     "tokensperminute", "requestsperminute", "daily limit",
+                    "rate_limit_from_provider", "rate_limit_provider",
                     # Cloudflare Workers AI daily cap
                     "3036", "daily free allocation", "neurons",
                 ]
@@ -1296,7 +1297,7 @@ class LLMOrchestrator:
     # Backend: Ollama (locale)
     # PORTED FROM: advanced_reasoning_llm.py _query_ollama
     # ------------------------------------------------------------------
-    def _query_ollama(self, prompt: str, system_prompt: str) -> Tuple[str, bool, Dict]:
+    def _query_ollama(self, prompt: str, system_prompt: str, model: str = None) -> Tuple[str, bool, Dict]:
         import requests
 
         base_url = "http://localhost:11434"
@@ -1308,12 +1309,13 @@ class LLMOrchestrator:
             return "", False, {}
 
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        selected_model = model or "llama3.2"
 
         start = time.time()
         response = requests.post(
             f"{base_url}/api/generate",
             json={
-                "model": "llama3.2",
+                "model": selected_model,
                 "prompt": full_prompt,
                 "stream": False,
                 "options": {
@@ -1329,7 +1331,7 @@ class LLMOrchestrator:
             data = response.json()
             text = data.get("response", "")
             return text, bool(text.strip()), {
-                "model": data.get("model", "llama3.2"),
+                "model": data.get("model", selected_model),
                 "provider": "Ollama",
                 "latency_s": round(latency, 2),
             }
@@ -1558,7 +1560,7 @@ class LLMOrchestrator:
                 "too many requests" in err_lower or "quota" in err_lower or
                 "resource_exhausted" in err_lower):
                 # Ri-solleva con marker 429 che l'orchestrator riconosce
-                raise Exception(f"429 rate_limit_provider: {err_str[:150]}")
+                raise Exception(f"429 rate_limit_from_provider: {err_str[:150]}")
             return "", False, {"error": err_str}
 
     # ------------------------------------------------------------------
