@@ -1550,7 +1550,16 @@ class LLMOrchestrator:
                 "latency_s": round(latency, 2),
             }
         except Exception as e:
-            return "", False, {"error": str(e)}
+            err_str = str(e)
+            # Riconosci 429, quota exceeded, rate limit e simili
+            # e propaga l'errore con marker "429" per il main dispatch
+            err_lower = err_str.lower()
+            if ("429" in err_str or "rate_limit" in err_lower or 
+                "too many requests" in err_lower or "quota" in err_lower or
+                "resource_exhausted" in err_lower):
+                # Ri-solleva con marker 429 che l'orchestrator riconosce
+                raise Exception(f"429 rate_limit_provider: {err_str[:150]}")
+            return "", False, {"error": err_str}
 
     # ------------------------------------------------------------------
     # NEW Groq Models with SEPARATE QUOTA

@@ -348,7 +348,8 @@ class BackendPool:
                 "gemini",              # 20 RPD (DOPO lite!)
                 "gemini_pro",          # 100 RPD, reasoning premium
 
-                # TIER 2: cloud reasoning free
+                # TIER 2: cloud reasoning free + resilient
+                "ionet",               # IO.NET 500K token/day gratis ILLIMITATO
                 "glm5_cloud",          # GLM-5 744B Ollama cloud
                 "kimi_cloud",          # Kimi K2.5 Ollama cloud
                 "openrouter_r1",       # DeepSeek R1 :free
