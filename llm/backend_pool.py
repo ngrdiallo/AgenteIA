@@ -459,6 +459,9 @@ class BackendPool:
                 "daily_limit",
                 "daily cap",
                 "requests per day",
+                "rate_limit_exceeded",
+                "per-day",
+                "rpd",
             )
             effective_cooldown = 86400 if any(kw in err_lower for kw in daily_kw) else cooldown_seconds
             self._states[name].record_rate_limit(effective_cooldown)

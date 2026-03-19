@@ -388,6 +388,13 @@ class LLMOrchestrator:
                         on_attempt(backend_name, "success")
                     return response
                 else:
+                    meta_error = ""
+                    if isinstance(metadata, dict):
+                        meta_error = str(metadata.get("error", "") or "")
+                    if meta_error:
+                        # Lascia che il blocco except applichi la stessa classificazione
+                        # 429/402/context già usata per le eccezioni native.
+                        raise Exception(meta_error)
                     self.pool.report_failure(backend_name, "empty_response")
                     self.attempts_log.append(f"⚠️ {backend_name}: risposta vuota")
 
@@ -411,6 +418,7 @@ class LLMOrchestrator:
                     "429", "rate limit", "rate_limit", "too many requests",
                     "quota exceeded", "resource_exhausted", "queue_exceeded",
                     "tokensperminute", "requestsperminute", "daily limit", "daily quota", "per day", "rate_limit_exceeded",
+                    "limit_rpd", "daily_limit", "daily cap", "requests per day", "per-day", "rpd",
                     "rate_limit_from_provider", "rate_limit_provider",
                     # Cloudflare Workers AI daily cap
                     "3036", "daily free allocation", "neurons",
@@ -445,7 +453,10 @@ class LLMOrchestrator:
                     elif m_sec:
                         cooldown = float(m_sec.group(1)) + 2
                     is_openrouter = backend_name.startswith("openrouter")
-                    is_daily_cap = any(kw in error_lower for kw in ["daily limit", "daily quota", "per day", "rate_limit_exceeded"])
+                    is_daily_cap = any(kw in error_lower for kw in [
+                        "daily limit", "daily quota", "per day", "rate_limit_exceeded",
+                        "limit_rpd", "daily_limit", "daily cap", "requests per day", "per-day", "rpd",
+                    ])
                     if is_openrouter and is_daily_cap:
                         cooldown = 86400
                     else:
@@ -491,7 +502,8 @@ class LLMOrchestrator:
         return any(kw in err_str for kw in [
             "429", "rate limit", "rate_limit", "too many requests",
             "quota exceeded", "resource_exhausted", "queue_exceeded",
-            "tokensperminute", "requestsperminute", "daily limit",
+            "tokensperminute", "requestsperminute", "daily limit", "daily quota", "per day",
+            "rate_limit_exceeded", "limit_rpd", "daily_limit", "daily cap", "requests per day", "per-day", "rpd",
         ])
 
     def _get_backend_method(self, name: str) -> Optional[Callable]:
@@ -688,7 +700,8 @@ class LLMOrchestrator:
             return any(kw in err_lower for kw in [
                 "429", "rate limit", "rate_limit", "too many requests",
                 "quota exceeded", "resource_exhausted",
-                "daily limit", "daily quota", "per day",
+                "daily limit", "daily quota", "per day", "rate_limit_exceeded",
+                "limit_rpd", "daily_limit", "daily cap", "requests per day", "per-day", "rpd",
                 "rate_limit_from_provider", "rate_limit_provider",
             ])
 
