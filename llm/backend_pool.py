@@ -123,8 +123,23 @@ class BackendState:
             "github": 6,
             "ovh": 6,
             "scaleway": 6,
+            # Variants / aliases (più tolleranti per run lunghi)
+            "openrouter_r1": 12,
+            "openrouter_llama": 12,
+            "openrouter_llama4": 12,
+            "openrouter_qwen235": 12,
+            "openrouter_gemma": 12,
+            "groq_qwen3": 10,
+            "groq_kimi": 10,
+            "groq_gptoss": 10,
+            "groq_llama4": 10,
+            "cerebras_70b": 10,
+            "cerebras_llama4": 10,
+            "cerebras_qwen32": 10,
+            "chutes": 12,
+            "ionet": 10,
         }
-        dead_threshold = DEAD_THRESHOLDS.get(self.name, 5)
+        dead_threshold = DEAD_THRESHOLDS.get(self.name, 8)
         
         if self.state == CircuitState.HEALTHY and self.consecutive_failures >= 3:
             self.state = CircuitState.DEGRADED

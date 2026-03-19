@@ -221,9 +221,9 @@ class LLMOrchestrator:
         "cerebras_qwen32": 10,   # Qwen3-32B fast
         "groq":           8,      # Ultra-fast
         "groq_8b":        8,      # 8B models are faster
-        "groq_qwen3":    15,     # Qwen3-32B reasoning
-        "groq_kimi":     15,     # Kimi-K2
-        "groq_gptoss":   20,     # GPT-OSS-120B larger model
+        "groq_qwen3":    22,     # Qwen3-32B reasoning (evita timeout prematuro)
+        "groq_kimi":     22,     # Kimi-K2
+        "groq_gptoss":   25,     # GPT-OSS-120B larger model
         "groq_llama4":   15,     # Llama4 Scout
         "gemini":        50,     # Large context: più tempo
         "gemini_lite":   15,     # Flash-Lite: veloce
@@ -267,7 +267,7 @@ class LLMOrchestrator:
     # Quindi i budget LLM sono ridotti per lasciare margine al pipeline.
     _QUERY_TYPE_BUDGETS = {
         "speed":         4,    # meta, greeting (E2E target: 5s)
-        "reasoning":     17,   # focused (E2E target: 20s)
+        "reasoning":     24,   # focused: maggiore stabilità in run lunghi
         "large_context": 90,   # comprehensive: Mistral 45s + fallback 45s
         None:            20,   # default
     }
