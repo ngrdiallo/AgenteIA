@@ -670,16 +670,13 @@ class LLMOrchestrator:
         "nousresearch/deephermes-3-llama-3-8b:free",
     ]
     def _query_openrouter(self, prompt: str, system_prompt: str, model: str = None) -> Tuple[str, bool, Dict]:
+        """OpenRouter multi-model. Se model è specificato usa fast-path diretto."""
+        import openai as _oai
+        import time as _t
+
         api_key = settings.OPENROUTER_API_KEY
         if not api_key:
-            return "", False, {}
-
-        import openai
-
-        client = openai.OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+            return "", False, {"error": "OPENROUTER_API_KEY non configurata"}
 
         messages = []
         if system_prompt:
@@ -695,19 +692,21 @@ class LLMOrchestrator:
                 "rate_limit_from_provider", "rate_limit_provider",
             ])
 
-        # Se model è passato esplicitamente, usalo; altrimenti prova i modelli :free
         if model:
             try:
-                start = time.time()
+                client = _oai.OpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=api_key,
+                )
+                start = _t.time()
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                 )
-                latency = time.time() - start
-                text = response.choices[0].message.content or ""
-                text = _strip_think(text)
+                latency = _t.time() - start
+                text = _strip_think(response.choices[0].message.content or "")
                 return text, bool(text.strip()), {
                     "model": model,
                     "provider": "OpenRouter",
@@ -717,22 +716,27 @@ class LLMOrchestrator:
                 err = str(e)
                 if _is_rate_limit_error(err):
                     raise Exception(f"429 rate_limit_from_provider: {err[:180]}")
+                logger.warning(f"openrouter direct model={model} err: {err[:120]}")
                 return "", False, {"error": err, "model": model}
 
-        # Altrimenti prova modelli :free in rotazione
+            client = _oai.OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=api_key,
+            )
+
         last_err = ""
         saw_rate_limit = False
         last_rate_limit_err = ""
         for model_name in self._OPENROUTER_FREE_MODELS:
             try:
-                start = time.time()
+                start = _t.time()
                 response = client.chat.completions.create(
                     model=model_name,
                     messages=messages,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                 )
-                latency = time.time() - start
+                latency = _t.time() - start
 
                 text = response.choices[0].message.content or ""
                 if text.strip():
