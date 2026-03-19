@@ -450,12 +450,12 @@ class LLMOrchestrator:
                         cooldown = 86400
                     else:
                         cooldown = max(10, min(int(cooldown), 300))  # clamp [10, 300]s
-                    self.pool.record_rate_limit(backend_name, cooldown_seconds=cooldown)
+                    self.pool.record_rate_limit(backend_name, cooldown_seconds=cooldown, error_msg=error_str)
                     logger.info(f"⏳ {backend_name}: rate limited, cooldown {cooldown}s")
                 elif is_402:
                     # Balance esaurito — PERMANENTE, non si auto-risolve.
                     # Disabilita il provider per 24h.
-                    self.pool.record_rate_limit(backend_name, cooldown_seconds=86400)
+                    self.pool.record_rate_limit(backend_name, cooldown_seconds=86400, error_msg=error_str)
                     logger.warning(f"💸 {backend_name}: insufficient balance (402), disabled 24h")
                 elif is_context:
                     # Il prompt è troppo grande per questo provider.

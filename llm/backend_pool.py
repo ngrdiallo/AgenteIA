@@ -443,14 +443,25 @@ class BackendPool:
         if name in self._states:
             self._states[name].record_failure(error_type, is_context_error, retry_after)
 
-    def record_rate_limit(self, name: str, cooldown_seconds: int = 60):
+    def record_rate_limit(self, name: str, cooldown_seconds: int = 60, error_msg: str = ""):
         """
         Registra un 429 rate limit per un provider.
         NON incrementa consecutive_failures — il provider è sano, solo esaurito.
         Mette il provider in cooldown per cooldown_seconds, poi auto-recovery.
         """
         if name in self._states:
-            self._states[name].record_rate_limit(cooldown_seconds)
+            err_lower = (error_msg or "").lower()
+            daily_kw = (
+                "daily quota",
+                "per day",
+                "daily limit",
+                "limit_rpd",
+                "daily_limit",
+                "daily cap",
+                "requests per day",
+            )
+            effective_cooldown = 86400 if any(kw in err_lower for kw in daily_kw) else cooldown_seconds
+            self._states[name].record_rate_limit(effective_cooldown)
 
     def status(self) -> dict:
         """Stato real-time di tutti i provider — per debug e UI."""
