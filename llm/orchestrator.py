@@ -410,7 +410,7 @@ class LLMOrchestrator:
                 _RATE_LIMIT_KW = [
                     "429", "rate limit", "rate_limit", "too many requests",
                     "quota exceeded", "resource_exhausted", "queue_exceeded",
-                    "tokensperminute", "requestsperminute", "daily limit",
+                    "tokensperminute", "requestsperminute", "daily limit", "daily quota", "per day", "rate_limit_exceeded",
                     "rate_limit_from_provider", "rate_limit_provider",
                     # Cloudflare Workers AI daily cap
                     "3036", "daily free allocation", "neurons",
@@ -444,7 +444,12 @@ class LLMOrchestrator:
                         cooldown = float(m_proto.group(1)) + 2
                     elif m_sec:
                         cooldown = float(m_sec.group(1)) + 2
-                    cooldown = max(10, min(int(cooldown), 300))  # clamp [10, 300]s
+                    is_openrouter = backend_name.startswith("openrouter")
+                    is_daily_cap = any(kw in error_lower for kw in ["daily limit", "daily quota", "per day", "rate_limit_exceeded"])
+                    if is_openrouter and is_daily_cap:
+                        cooldown = 86400
+                    else:
+                        cooldown = max(10, min(int(cooldown), 300))  # clamp [10, 300]s
                     self.pool.record_rate_limit(backend_name, cooldown_seconds=cooldown)
                     logger.info(f"⏳ {backend_name}: rate limited, cooldown {cooldown}s")
                 elif is_402:
@@ -681,6 +686,15 @@ class LLMOrchestrator:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        def _is_rate_limit_error(err: str) -> bool:
+            err_lower = err.lower()
+            return any(kw in err_lower for kw in [
+                "429", "rate limit", "rate_limit", "too many requests",
+                "quota exceeded", "resource_exhausted",
+                "daily limit", "daily quota", "per day",
+                "rate_limit_from_provider", "rate_limit_provider",
+            ])
+
         # Se model è passato esplicitamente, usalo; altrimenti prova i modelli :free
         if model:
             try:
@@ -693,16 +707,22 @@ class LLMOrchestrator:
                 )
                 latency = time.time() - start
                 text = response.choices[0].message.content or ""
-                return _strip_think(text), bool(text.strip()), {
+                text = _strip_think(text)
+                return text, bool(text.strip()), {
                     "model": model,
                     "provider": "OpenRouter",
                     "latency_s": round(latency, 2),
                 }
             except Exception as e:
-                return "", False, {"error": str(e), "model": model}
+                err = str(e)
+                if _is_rate_limit_error(err):
+                    raise Exception(f"429 rate_limit_from_provider: {err[:180]}")
+                return "", False, {"error": err, "model": model}
 
         # Altrimenti prova modelli :free in rotazione
         last_err = ""
+        saw_rate_limit = False
+        last_rate_limit_err = ""
         for model_name in self._OPENROUTER_FREE_MODELS:
             try:
                 start = time.time()
@@ -717,15 +737,22 @@ class LLMOrchestrator:
                 text = response.choices[0].message.content or ""
                 if text.strip():
                     model_used = getattr(response, "model", model_name)
-                    return text, True, {
+                    return _strip_think(text), True, {
                         "model": model_used,
                         "provider": "OpenRouter",
                         "latency_s": round(latency, 2),
                     }
             except Exception as e:
-                last_err = str(e)[:80]
+                err = str(e)
+                last_err = err[:120]
+                if _is_rate_limit_error(err):
+                    saw_rate_limit = True
+                    last_rate_limit_err = err
                 logger.debug(f"OpenRouter {model_name} fallito: {last_err}")
                 continue
+
+        if saw_rate_limit:
+            raise Exception(f"429 rate_limit_from_provider: {(last_rate_limit_err or last_err)[:180]}")
 
         logger.warning(f"OpenRouter: tutti i modelli :free falliti. Ultimo: {last_err}")
         return "", False, {"error": last_err}
