@@ -340,63 +340,64 @@ class BackendPool:
             ],
             # Reasoning: modelli qualitativi
             "reasoning": [
+                "groq_qwen3",          # Qwen3-32B /think LPU (stabile)
+                "gemini",              # 2.5 Flash
+                "mistral",             # 1B token/mese
+                "gemini_pro",          # 100 RPD, reasoning premium
+                "nvidia",              # Llama 70B
+                "groq_kimi",           # Kimi-K2 su Groq
+                "groq_gptoss",         # GPT-OSS-120B
+                "sambanova",           # 70B
+                "cerebras",            # ultra-rapido
+                "groq",                # veloce ma quota limitata
+                # Demoted: tendono a saturare quota o diventare dead in run lunghi
                 "openrouter_r1",       # DeepSeek R1 SOTA
                 "chutes",              # DeepSeek-R1 decentralized
-                "groq_qwen3",         # Qwen3-32B /think LPU
+                # Experimental cloud variants
                 "glm5_cloud",          # GLM-5 744B
                 "kimi_cloud",          # Kimi K2.5
                 "modelscope_qwen",     # Qwen3-480B
-                "gemini_pro",          # 100 RPD, reasoning premium
-                "mistral",             # 1B token/mese
-                "gemini",              # 2.5 Flash
                 "deepseek",            # DeepSeek V3
-                "groq_kimi",           # Kimi-K2 su Groq
-                "nvidia",              # Llama 70B
-                "cerebras",            # ultra-rapido
-                "groq",                # veloce ma quota limitata
-                "sambanova",           # 70B
             ],
             # Large context: backbone Mistral + cloud reasoning + locale illimitato
             "large_context": [
-                # TIER 1: backbone alto volume (gemini_lite PRIMA di gemini!)
-                "mistral",             # 33M token/mese BACKBONE
+                # TIER 1: backbone alto volume/stabilità
                 "gemini_lite",         # 1000 RPD (PRIMA!)
                 "gemini",              # 20 RPD (DOPO lite!)
+                "mistral",             # 33M token/mese BACKBONE
                 "gemini_pro",          # 100 RPD, reasoning premium
-
-                # TIER 2: cloud reasoning free + resilient
                 "ionet",               # IO.NET 500K token/day gratis ILLIMITATO
-                "glm5_cloud",          # GLM-5 744B Ollama cloud
-                "kimi_cloud",          # Kimi K2.5 Ollama cloud
-                "openrouter_r1",       # DeepSeek R1 :free
-                "chutes",              # Bittensor decentralized
-                "groq_gptoss",         # GPT-OSS-120B 1K/day Groq
-
-                # TIER 3: capacità distribuita
-                "cloudflare",          # 10K req/day
-                "modelscope_qwen",      # Qwen3-480B 2K/day
                 "nvidia",              # 40 RPM
-                "cerebras_70b",        # Llama3.3-70B Cerebras 1M/day
-                "cerebras_llama4",     # Llama4 Scout Cerebras 1M/day
+                "sambanova",           # Llama 3.3 70B
+                "fireworks",           # Fireworks AI
 
-                # TIER 4: fallback diversificato
+                # TIER 2: fallback distribuito (più variabile)
                 "groq_qwen3",          # Qwen3-32B Groq LPU 1K/day
                 "groq_kimi",           # Kimi-K2 Groq 1K/day
+                "groq_gptoss",         # GPT-OSS-120B 1K/day Groq
                 "groq_llama4",         # Llama4 Scout Groq 1K/day
+                "openrouter_r1",       # DeepSeek R1 :free
+                "chutes",              # Bittensor decentralized
                 "openrouter_llama4",   # Llama4 10M ctx :free
                 "openrouter_qwen235",  # Qwen3-235B :free
                 "openrouter_qwen",     # Qwen 2.5 72B :free
-                "sambanova",           # Llama 3.3 70B
                 "openrouter_gemma",    # Gemma 3 27B
-                "fireworks",           # Fireworks AI
+                "glm5_cloud",          # GLM-5 744B Ollama cloud
+                "kimi_cloud",          # Kimi K2.5 Ollama cloud
                 "minimax_cloud",       # MiniMax M2.5 Ollama cloud
+                "cloudflare",          # 10K req/day
+                "modelscope_qwen",     # Qwen3-480B 2K/day
 
-                # TIER 5: safety net cloud
+                # TIER 3: capacità distribuita
+                "cerebras_70b",        # Llama3.3-70B Cerebras 1M/day
+                "cerebras_llama4",     # Llama4 Scout Cerebras 1M/day
+
+                # TIER 4: safety net cloud
                 "groq_8b",             # Llama3.1-8B Groq 1M/day
                 "groq",                # Llama3.3-70B Groq 1M/day
                 "openrouter_llama",     # Llama3.3-70B OR :free
 
-                # TIER 6: locale infinito
+                # TIER 5: locale infinito
                 "vllm",               # locale GPU illimitato
                 "localai",            # locale full stack
                 "ollama_free_api",    # distributed, no key

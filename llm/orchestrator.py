@@ -163,6 +163,11 @@ class LLMOrchestrator:
         # Provider non necessari
         "nebius",         # Disabilitato su richiesta utente
         "cortecs",        # Disabilitato su richiesta utente
+        # Endpoint locali non attivi in questo deployment
+        "vllm",
+        "localai",
+        "llamacpp",
+        "ollama_free_api",
     }
 
     def __init__(
