@@ -340,16 +340,24 @@ class BackendPool:
             ],
             # Reasoning: modelli qualitativi
             "reasoning": [
-                "groq_qwen3",          # Qwen3-32B /think LPU (stabile)
+                # Cerebras FIRST (stabilità long-run)
+                "cerebras_70b",        # Llama3.3-70B Cerebras
+                "cerebras",            # Llama3.1-8B ultra-rapido
+                "cerebras_qwen32",     # Qwen3-32B Cerebras
+
+                # Groq come fallback (evita saturazione TPM in posizione 0)
+                "groq_qwen3",          # Qwen3-32B /think LPU
+                "groq_kimi",           # Kimi-K2 su Groq
+                "groq_gptoss",         # GPT-OSS-120B
+                "groq",                # veloce ma quota limitata
+
+                # Backup qualitativi
                 "gemini",              # 2.5 Flash
                 "mistral",             # 1B token/mese
                 "gemini_pro",          # 100 RPD, reasoning premium
                 "nvidia",              # Llama 70B
-                "groq_kimi",           # Kimi-K2 su Groq
-                "groq_gptoss",         # GPT-OSS-120B
                 "sambanova",           # 70B
-                "cerebras",            # ultra-rapido
-                "groq",                # veloce ma quota limitata
+
                 # Demoted: tendono a saturare quota o diventare dead in run lunghi
                 "openrouter_r1",       # DeepSeek R1 SOTA
                 "chutes",              # DeepSeek-R1 decentralized
