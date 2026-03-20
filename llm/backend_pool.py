@@ -365,6 +365,9 @@ class BackendPool:
                 "gemini_lite",         # 1000 RPD (PRIMA!)
                 "gemini",              # 20 RPD (DOPO lite!)
                 "mistral",             # 33M token/mese BACKBONE
+                "groq_qwen3",          # Qwen3-32B Groq LPU 1K/day
+                "groq_kimi",           # Kimi-K2 Groq 1K/day
+                "groq_gptoss",         # GPT-OSS-120B 1K/day Groq
                 "gemini_pro",          # 100 RPD, reasoning premium
                 "ionet",               # IO.NET 500K token/day gratis ILLIMITATO
                 "nvidia",              # 40 RPM
@@ -372,9 +375,6 @@ class BackendPool:
                 "fireworks",           # Fireworks AI
 
                 # TIER 2: fallback distribuito (più variabile)
-                "groq_qwen3",          # Qwen3-32B Groq LPU 1K/day
-                "groq_kimi",           # Kimi-K2 Groq 1K/day
-                "groq_gptoss",         # GPT-OSS-120B 1K/day Groq
                 "groq_llama4",         # Llama4 Scout Groq 1K/day
                 "openrouter_r1",       # DeepSeek R1 :free
                 "chutes",              # Bittensor decentralized

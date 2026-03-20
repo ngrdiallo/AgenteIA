@@ -168,6 +168,10 @@ class LLMOrchestrator:
         "localai",
         "llamacpp",
         "ollama_free_api",
+        # Provider instabili/quota-bassa nei run lunghi
+        "gemini_pro",
+        "fireworks",
+        "cloudflare",
     }
 
     def __init__(
