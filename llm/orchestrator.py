@@ -310,6 +310,7 @@ class LLMOrchestrator:
         system_prompt: str = "",
         on_attempt: Optional[Callable[[str, str], None]] = None,
         routing_hint: Optional[str] = None,
+        allow_degrade: bool = True,
     ) -> LLMResponse:
         """
         Genera una completion usando la catena di fallback con smart routing.
@@ -492,6 +493,27 @@ class LLMOrchestrator:
                 if on_attempt:
                     on_attempt(backend_name, f"failed: {str(e)[:50]}")
                 continue
+
+        # Graceful degradation: comprehensive -> reasoning prima dell'errore finale
+        if routing_hint == "large_context" and allow_degrade:
+            primary_attempts = list(self.attempts_log)
+            logger.warning(
+                "Large-context chain exhausted without valid text; "
+                "downgrade to reasoning chain"
+            )
+            degraded = self.complete(
+                prompt,
+                system_prompt,
+                on_attempt,
+                "reasoning",
+                allow_degrade=False,
+            )
+            if degraded.text.strip() and degraded.backend_used != "none":
+                meta = dict(degraded.metadata or {})
+                meta["degraded_from"] = "large_context"
+                meta["primary_attempts"] = primary_attempts
+                degraded.metadata = meta
+                return degraded
 
         # Tutti i backend falliti - ritorna errore
         logger.error(f"Tutti i backend LLM falliti. Ultimo errore: {last_error}")
